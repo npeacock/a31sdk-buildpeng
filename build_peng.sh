@@ -21,10 +21,11 @@ PR_DIR=$CUR_DIR/../rootfs
 #ROOTFS_NAME=linaro-min-orig
 #ROOTFS_NAME=linaro-nano
 #ROOTFS_NAME=linaro-min
-ROOTFS_NAME=linaro-peng
+ROOTFS_NAME=tizen
 #ROOTFS_NAME=nemo
 PR_OUT_DIR=$PR_DIR/$ROOTFS_NAME
-ROOTFS_SIZE=1200000
+ROOTFS_SIZE=1250000
+#ROOTFS_SIZE=2100000
 
 OUT_DIR_LIN=$CUR_DIR/out_linux
 OUT_DIR_AND=$CUR_DIR/out_android
@@ -109,12 +110,12 @@ regen_peng_rootfs()
 {
 	if [ -d ${BR_OUT_DIR}/target ]; then
 		echo "Copy modules to target..."
-		mkdir -p ${PR_OUT_DIR}/lib/modules
+		sudo mkdir -p ${PR_OUT_DIR}/lib/modules
 
-		rm -rf ${PR_OUT_DIR}/lib/modules/*
-		cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
+		sudo rm -rf ${PR_OUT_DIR}/lib/modules/*
+		sudo cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
 		# this is a hacky way to do this
-		cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
+		sudo cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
 
 	fi
 
@@ -126,15 +127,16 @@ regen_peng_rootfs()
 
 regen_peng_rootfs_named()
 {
-ROOTFS_NAME=$2
+ROOTFS_NAME=$1
+PR_OUT_DIR=$PR_DIR/$ROOTFS_NAME
 	if [ -d ${BR_OUT_DIR}/target ]; then
 		echo "Copy modules to target..."
-		mkdir -p ${PR_OUT_DIR}/lib/modules
+		sudo mkdir -p ${PR_OUT_DIR}/lib/modules
 
-		rm -rf ${PR_OUT_DIR}/lib/modules/*
-		cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
+		sudo rm -rf ${PR_OUT_DIR}/lib/modules/*
+		sudo cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
 		# this is a hacky way to do this
-		cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
+		sudo cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
 
 	fi
 
@@ -369,7 +371,7 @@ elif [ "$1" = "pengpack" ]; then
 elif [ "$1" = "pengpackname" ]; then
 	# HERE WE NEED TO STOP OVERWRITING OR JUST DO OUR MODULES COPY AND CALL OUR OWN MKEXT4
 
-   	echo "generate Pengpod rootfs now, it will takes several minutes and log in out/"
+   	echo "generate Pengpod rootfs now from '$2', it will takes several minutes and log in out/"
 	if [ ! -d "${OUT_DIR}" ]; then
 		mkdir -pv ${OUT_DIR}
 	fi
