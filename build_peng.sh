@@ -24,11 +24,15 @@ PR_DIR=$CUR_DIR/../rootfs
 ROOTFS_NAME=tizen
 #ROOTFS_NAME=nemo
 PR_OUT_DIR=$PR_DIR/$ROOTFS_NAME
-ROOTFS_SIZE=1250000
+#ROOTFS_SIZE=1650
+ROOTFS_SIZE=2200
+#ROOTFS_SIZE=1650000
 #ROOTFS_SIZE=2100000
 
 OUT_DIR_LIN=$CUR_DIR/out_linux
 OUT_DIR_AND=$CUR_DIR/out_android
+
+MNT_DIR=/mnt/root
 
 #BOOT_ANDROID_DIR=/media/Storage/allwinner/a31/SDK/android/android4.1/out/target/product/fiber-3g/root
 #BOOT_ANDROID_OUT_DIR=/media/Storage/allwinner/a31/SDK/android/android4.1/out/target/product/fiber-3g
@@ -69,6 +73,10 @@ Examples:
 	./build.sh -p sun6i_dragonboard
 	./build.sh -p sun6i_fiber
 	./build.sh pack
+	./build.sh pengpackfast
+	./build.sh packpackname
+	./build.sh penglin
+	./build.sh penglinfast
 
 "
 
@@ -116,11 +124,28 @@ regen_peng_rootfs()
 		sudo cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
 		# this is a hacky way to do this
 		sudo cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
+		if [ -e ${PR_OUT_DIR}/etc/modules-dep  ] ; then
+			echo "Copying modules.dep"
+			sudo cp -rf ${PR_OUT_DIR}/etc/modules-dep/* ${PR_OUT_DIR}/lib/modules/3.3.0 
+		fi
 
 	fi
 
 	# make it here
-	sudo genext2fs -b $ROOTFS_SIZE -N 100000 -d ${PR_DIR}/$ROOTFS_NAME ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+	#sudo genext2fs -b $ROOTFS_SIZE -N 100000 -d ${PR_DIR}/$ROOTFS_NAME ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+ 	dd if=/dev/zero of=${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 bs=1M count=$ROOTFS_SIZE
+        mkfs.ext4 -F ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+        sudo mount -o loop ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 $MNT_DIR
+        sudo cp -ar ${PR_DIR}/$ROOTFS_NAME/* $MNT_DIR
+        sync
+        sudo umount $MNT_DIR
+
+# 	echo " dd if=/dev/zero of=${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 bs=1M count=$ROOTFS_SIZE
+# 	mkfs.ext4 ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+# 	sudo mount -o loop ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 $MNT_DIR
+echo	"sudo cp -ar ${PR_DIR}/$ROOTFS_NAME/* $MNT_DIR"
+#	sync
+#	sudo umount $MNT_DIR "
 
 	#sudo genext2fs -b 480000 -N 100000 -d ${PR_DIR}/linaro-usr ${PR_DIR}/linaro-usr-rootfs.ext4
 }
@@ -129,7 +154,7 @@ regen_peng_rootfs_named()
 {
 ROOTFS_NAME=$1
 PR_OUT_DIR=$PR_DIR/$ROOTFS_NAME
-	if [ -d ${BR_OUT_DIR}/target ]; then
+	if [ -d ${PR_OUT_DIR} ]; then
 		echo "Copy modules to target..."
 		sudo mkdir -p ${PR_OUT_DIR}/lib/modules
 
@@ -137,11 +162,24 @@ PR_OUT_DIR=$PR_DIR/$ROOTFS_NAME
 		sudo cp -rf ${KERN_OUT_DIR}/lib/modules/* ${PR_OUT_DIR}/lib/modules/
 		# this is a hacky way to do this
 		sudo cp -rf ${PR_OUT_DIR}/etc/modules.dep ${PR_OUT_DIR}/lib/modules/3.3.0 
+		if [ -e ${PR_OUT_DIR}/etc/modules-dep  ] ; then
+			echo "Copying modules.dep"
+			sudo cp -rf ${PR_OUT_DIR}/etc/modules-dep/* ${PR_OUT_DIR}/lib/modules/3.3.0 
+		fi
 
 	fi
 
 	# make it here
-	sudo genext2fs -b $ROOTFS_SIZE -N 100000 -d ${PR_DIR}/$ROOTFS_NAME ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+	#echo "creating sudo genext2fs -b $ROOTFS_SIZE -N 100000 -d ${PR_DIR}/$ROOTFS_NAME ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4"
+	#sudo genext2fs -b $ROOTFS_SIZE -N 100000 -d ${PR_DIR}/$ROOTFS_NAME ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+ 	dd if=/dev/zero of=${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 bs=1M count=$ROOTFS_SIZE
+ 	mkfs.ext4 -F ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4
+ 	sudo mount -o loop ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 $MNT_DIR
+	sudo cp -ar ${PR_DIR}/$ROOTFS_NAME/* $MNT_DIR
+	sync
+	sudo umount $MNT_DIR
+
+echo	"sudo cp -ar ${PR_DIR}/$ROOTFS_NAME/* $MNT_DIR"
 
 	#sudo genext2fs -b 480000 -N 100000 -d ${PR_DIR}/linaro-usr ${PR_DIR}/linaro-usr-rootfs.ext4
 }
@@ -191,6 +229,7 @@ gen_output_generic()
 
 gen_output_pengpod()
 {
+	echo " copying cp -v ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 ${OUT_DIR}/rootfs.ext4 "
 	cp -v ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 ${OUT_DIR}/rootfs.ext4
 	cp -r ${KERN_OUT_DIR}/* ${OUT_DIR}/
 	if [ -e ${U_BOOT_DIR}/u-boot.bin ]; then
@@ -209,11 +248,16 @@ gen_output_pengpod_linux()
 
 gen_output_pengpod_android()
 {
-	cp -v ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 ${OUT_DIR_AND}/rootfs.ext4
+	echo "g_o_p_a:1"
+	#cp -v ${PR_DIR}/$ROOTFS_NAME-rootfs.ext4 ${OUT_DIR_AND}/rootfs.ext4
+	#echo "g_o_p_a:2"
 	cp -r ${KERN_OUT_DIR}/* ${OUT_DIR_AND}/
+	echo "g_o_p_a:3"
 	if [ -e ${U_BOOT_DIR}/u-boot.bin ]; then
-		cp -v ${U_BOOT_DIR}/u-boot.bin ${OUT_DIR}/
+	echo "g_o_p_a:4"
+		cp -v ${U_BOOT_DIR}/u-boot.bin ${OUT_DIR_AND}/
 	fi
+	echo "g_o_p_a:5"
 }
 
 gen_output_sun4i()
@@ -307,7 +351,27 @@ gen_output_a12_nuclear()
 
 gen_output_sun6i()
 {
-	gen_output_generic
+	#gen_output_generic
+	#cp -v ${BR_OUT_DIR}/images/* ${OUT_DIR_LIN}/
+	cp -r ${KERN_OUT_DIR}/* ${OUT_DIR_LIN}/
+	if [ -e ${U_BOOT_DIR}/u-boot.bin ]; then
+		cp -v ${U_BOOT_DIR}/u-boot.bin ${OUT_DIR_LIN}/
+	fi
+}
+
+prepare_update_kernel()
+{
+	if [ ! -d "${OUT_DIR_LIN}/latest" ]; then
+		mkdir -pv "${OUT_DIR_LIN}/latest"
+	fi
+
+	echo "Tar up kernel modules"
+	cp -r ${OUT_DIR_LIN}/boot.img ${OUT_DIR_LIN}/latest
+
+	cd ${OUT_DIR_LIN}/lib
+	tar cvzf ${OUT_DIR_LIN}/latest/modules.tar.gz *
+	cd $PWD
+
 }
 
 gen_output_sun6i_fiber()
@@ -325,6 +389,14 @@ gen_output_sun6i_fiber()
 	if [ -e ${U_BOOT_DIR}/u-boot.bin ]; then
 		cp -v ${U_BOOT_DIR}/u-boot.bin ${OUT_DIR}/android
 	fi
+
+	#cp -v ${BR_OUT_DIR}/images/* ${OUT_DIR_AND}/
+	cp -r ${KERN_OUT_DIR}/* ${OUT_DIR_AND}/
+	if [ -e ${U_BOOT_DIR}/u-boot.bin ]; then
+		cp -v ${U_BOOT_DIR}/u-boot.bin ${OUT_DIR_AND}/
+	fi
+
+	gen_output_pengpod_android
 }
 
 gen_output_sun6i_dragonboard()
@@ -489,6 +561,8 @@ else
 	export PATH=${BR_OUT_DIR}/external-toolchain/bin:$PATH
 	cd ${KERN_DIR} && ./build.sh -p ${PLATFORM}
 
+	prepare_update_kernel
+
 	case ${PLATFORM} in
 		a12_nuclear*)
 		echo "build uboot for sun5i_a12"
@@ -506,21 +580,25 @@ else
                 echo "build uboot for sun5i_a13"
                 cd ${U_BOOT_DIR} && ./build.sh -p sun5i_a13
                 ;;
-		sun6i)
-				echo "build uboot for sun6i"
-				cd ${U_BOOT_DIR} && ./build.sh -p sun6i
+	sun6i)
+		echo "build uboot for sun6i"
+		cd ${U_BOOT_DIR} && ./build.sh -p sun6i
+		echo "Copying to $OUT_DIR_LIN"
+		gen_output_${PLATFORM}
 		;;
-		sun6i_fiber)
-				echo "build uboot for sun6i_fiber"
-				cd ${U_BOOT_DIR} && ./build.sh -p sun6i
-				gen_output_${PLATFORM}
+	sun6i_fiber)
+		echo "build uboot for sun6i_fiber"
+		cd ${U_BOOT_DIR} && ./build.sh -p sun6i
+		echo "Copying to $OUT_DIR_AND"
+		gen_output_${PLATFORM}
+
 		;;
         sun6i_dragonboard)
                 echo "build uboot for sun6i_dragonboard"
-				cd ${U_BOOT_DIR} && ./build.sh -p sun6i
+		cd ${U_BOOT_DIR} && ./build.sh -p sun6i
 
-         ;;
-		*)
+         	;;
+	*)
                 echo "build uboot for ${PLATFORM}"
                 cd ${U_BOOT_DIR} && ./build.sh -p ${PLATFORM}
                 ;;
